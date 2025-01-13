@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Formatter</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Ace Editor -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.0/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.0/ext-emmet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.0/ext-language_tools.js"></script>
+
+  <!-- js-beautify -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify-html.min.js"></script>
+
+  <!-- Ionicons -->
+  <script type="module" src="https://unpkg.com/ionicons@6.0.4/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@6.0.4/dist/ionicons/ionicons.js"></script>
+
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #ffffff;
+    }
+    #editor {
+      
+    }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden bg-gray-900 text-white">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-gray-800 transform -translate-x-full transition-transform duration-300 overflow-y-auto z-50">
+    <div class="p-4">
+      <h2 class="text-xl font-bold mb-4">Menu</h2>
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold mb-2">Actions</h3>
+        <button id="formatBtn" class="w-full px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 flex items-center">
+          <ion-icon name="brush-outline" class="mr-2"></ion-icon> Format
+        </button>
+        <button id="copyBtn" class="w-full px-4 py-2 mt-2 bg-green-600 rounded hover:bg-green-700 flex items-center">
+          <ion-icon name="copy-outline" class="mr-2"></ion-icon> Copy
+        </button>
+        <button id="pasteBtn" class="w-full px-4 py-2 mt-2 bg-yellow-600 rounded hover:bg-yellow-700 flex items-center">
+          <ion-icon name="clipboard-outline" class="mr-2"></ion-icon> Paste
+        </button>
+        <button id="clearBtn" class="w-full px-4 py-2 mt-2 bg-red-600 rounded hover:bg-red-700 flex items-center">
+          <ion-icon name="trash-outline" class="mr-2"></ion-icon> Clear
+        </button>
+        <button id="downloadBtn" class="w-full px-4 py-2 mt-2 bg-purple-600 rounded hover:bg-purple-700 flex items-center">
+          <ion-icon name="download-outline" class="mr-2"></ion-icon> Download
+        </button>
+      </div>
+      <div class="mb-6">
+        <h3 class="text-lg font-semibold mb-2">Settings</h3>
+        <h4 class="mb-2">Theme</h4>
+        <select id="themeSelect" class="w-full px-4 py-2 bg-gray-700 rounded outline-none">
+          <option value="ace/theme/monokai">Monokai</option>
+          <option value="ace/theme/github">GitHub</option>
+          <option value="ace/theme/twilight">Twilight</option>
+          <option value="ace/theme/solarized_dark">Solarized Dark</option>
+          <option value="ace/theme/solarized_light">Solarized Light</option>
+        </select>
+        <h4 class="mt-4 mb-2">Mode</h4>
+        <select id="modeSelect" class="w-full px-4 py-2 bg-gray-700 rounded outline-none">
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="javascript">JavaScript</option>
+        </select>
+      </div>
+      <div>
+        <h3 class="text-lg font-semibold mb-2">More Features</h3>
+        <p class="text-gray-400">Coming soon...</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-grow flex flex-col">
+    <!-- Header -->
+    <header class="p-4 bg-gray-800 flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Code Formatter</h1>
+      <button id="toggleSidebar" class="text-white">
+        <ion-icon name="menu-outline" size="large"></ion-icon>
+      </button>
+    </header>
+
+    <!-- Editor Container -->
+    <main class="flex-grow p-4">
+      <div id="editor" class="w-full h-full rounded shadow-lg"></div>
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    const editor = ace.edit("editor");
+    const sidebar = document.getElementById("sidebar");
+    const toggleSidebar = document.getElementById("toggleSidebar");
+    const themeSelect = document.getElementById("themeSelect");
+    const modeSelect = document.getElementById("modeSelect");
+
+    // Initialize Ace Editor
+    const savedContent = localStorage.getItem("codeEditorContent") || "";
+    const savedTheme = localStorage.getItem("codeEditorTheme") || "ace/theme/monokai";
+    const savedMode = localStorage.getItem("codeEditorMode") || "html";
+
+    editor.setTheme(savedTheme);
+    editor.session.setMode(`ace/mode/${savedMode}`);
+    editor.setValue(savedContent, -1);
+    editor.setOptions({
+      enableBasicAutocompletion: true,
+      enableSnippets: true,
+      enableLiveAutocompletion: true,
+      enableEmmet: true,
+    });
+
+    themeSelect.value = savedTheme;
+    modeSelect.value = savedMode;
+
+    // Save content to localStorage
+    editor.session.on("change", () => {
+      localStorage.setItem("codeEditorContent", editor.getValue());
+    });
+
+    // Change theme
+    themeSelect.addEventListener("change", () => {
+      const theme = themeSelect.value;
+      editor.setTheme(theme);
+      localStorage.setItem("codeEditorTheme", theme);
+    });
+
+    // Change mode
+    modeSelect.addEventListener("change", () => {
+      const mode = modeSelect.value;
+      editor.session.setMode(`ace/mode/${mode}`);
+      localStorage.setItem("codeEditorMode", mode);
+    });
+
+    // Format Code
+    document.getElementById("formatBtn").addEventListener("click", () => {
+      const code = editor.getValue();
+      const formattedCode = html_beautify(code, { indent_size: 2 });
+      editor.setValue(formattedCode);
+    });
+
+    // Copy Code
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      navigator.clipboard.writeText(editor.getValue()).then(() => {
+        alert("Code copied to clipboard!");
+      });
+    });
+
+    // Paste Code
+    document.getElementById("pasteBtn").addEventListener("click", async () => {
+      const text = await navigator.clipboard.readText();
+      editor.setValue(text);
+    });
+
+    // Clear Code
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      editor.setValue("");
+    });
+
+    // Download Code
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const blob = new Blob([editor.getValue()], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `formatted_code.${modeSelect.value}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Toggle Sidebar
+    toggleSidebar.addEventListener("click", () => {
+      sidebar.classList.toggle("-translate-x-full");
+    });
+  </script>
+</body>
+</html>
