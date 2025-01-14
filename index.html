@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,8 @@
 
   <!-- js-beautify -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify-html.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify-css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify.min.js"></script>
 
   <!-- Ionicons -->
   <script type="module" src="https://unpkg.com/ionicons@6.0.4/dist/ionicons/ionicons.esm.js"></script>
@@ -26,10 +29,11 @@
       color: #ffffff;
     }
     #editor {
-      
+      height: 80vh;
     }
   </style>
 </head>
+
 <body class="flex h-screen overflow-hidden bg-gray-900 text-white">
 
   <!-- Sidebar -->
@@ -71,10 +75,6 @@
           <option value="javascript">JavaScript</option>
         </select>
       </div>
-      <div>
-        <h3 class="text-lg font-semibold mb-2">More Features</h3>
-        <p class="text-gray-400">Coming soon...</p>
-      </div>
     </div>
   </aside>
 
@@ -101,12 +101,12 @@
     const toggleSidebar = document.getElementById("toggleSidebar");
     const themeSelect = document.getElementById("themeSelect");
     const modeSelect = document.getElementById("modeSelect");
-
+    
     // Initialize Ace Editor
     const savedContent = localStorage.getItem("codeEditorContent") || "";
     const savedTheme = localStorage.getItem("codeEditorTheme") || "ace/theme/monokai";
     const savedMode = localStorage.getItem("codeEditorMode") || "html";
-
+    
     editor.setTheme(savedTheme);
     editor.session.setMode(`ace/mode/${savedMode}`);
     editor.setValue(savedContent, -1);
@@ -116,54 +116,83 @@
       enableLiveAutocompletion: true,
       enableEmmet: true,
     });
-
+    
     themeSelect.value = savedTheme;
     modeSelect.value = savedMode;
-
+    
     // Save content to localStorage
     editor.session.on("change", () => {
       localStorage.setItem("codeEditorContent", editor.getValue());
     });
-
+    
     // Change theme
     themeSelect.addEventListener("change", () => {
       const theme = themeSelect.value;
       editor.setTheme(theme);
       localStorage.setItem("codeEditorTheme", theme);
     });
-
+    
     // Change mode
     modeSelect.addEventListener("change", () => {
       const mode = modeSelect.value;
       editor.session.setMode(`ace/mode/${mode}`);
       localStorage.setItem("codeEditorMode", mode);
     });
-
+    
     // Format Code
     document.getElementById("formatBtn").addEventListener("click", () => {
       const code = editor.getValue();
-      const formattedCode = html_beautify(code, { indent_size: 2 });
+      const mode = modeSelect.value;
+    
+      let formattedCode;
+      if (mode === "html") {
+        formattedCode = html_beautify(code, { indent_size: 2 });
+      } else if (mode === "css") {
+        formattedCode = css_beautify(code, { indent_size: 2 });
+      } else if (mode === "javascript") {
+        formattedCode = js_beautify(code, { indent_size: 2 });
+      } else {
+        alert("Formatting not supported for this mode.");
+        return;
+      }
+      
       editor.setValue(formattedCode);
     });
-
+    
     // Copy Code
     document.getElementById("copyBtn").addEventListener("click", () => {
       navigator.clipboard.writeText(editor.getValue()).then(() => {
         alert("Code copied to clipboard!");
       });
     });
-
+    
     // Paste Code
     document.getElementById("pasteBtn").addEventListener("click", async () => {
-      const text = await navigator.clipboard.readText();
-      editor.setValue(text);
+      try {
+    // Ensure the clipboard API is supported
+    if (!navigator.clipboard) {
+      alert("Clipboard API is not supported in your browser.");
+      return;
+    }
+    
+    // Read text from the clipboard
+    const text = await navigator.clipboard.readText();
+    
+    // Append the clipboard content to the current editor content
+    const currentContent = editor.getValue();
+    editor.setValue(currentContent + text);
+      } catch (error) {
+    console.error("Failed to read from clipboard:", error);
+    alert(
+      "Unable to access clipboard. Please ensure you have granted clipboard permissions."
+    );
+      }
     });
-
     // Clear Code
     document.getElementById("clearBtn").addEventListener("click", () => {
       editor.setValue("");
     });
-
+    
     // Download Code
     document.getElementById("downloadBtn").addEventListener("click", () => {
       const blob = new Blob([editor.getValue()], { type: "text/plain" });
@@ -174,11 +203,12 @@
       a.click();
       URL.revokeObjectURL(url);
     });
-
+    
     // Toggle Sidebar
     toggleSidebar.addEventListener("click", () => {
       sidebar.classList.toggle("-translate-x-full");
     });
   </script>
 </body>
+
 </html>
